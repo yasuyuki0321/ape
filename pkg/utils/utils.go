@@ -69,3 +69,28 @@ func LoadAccountsFromConfig() ([]Account, error) {
 
 	return accounts, nil
 }
+
+func FilterAccounts(roleArns []Account, target string) []Account {
+	if target == "all" {
+		return roleArns
+	}
+
+	var filtered []Account
+	for _, roleArn := range roleArns {
+		if matchesTarget(roleArn.Name, target) {
+			filtered = append(filtered, roleArn)
+		}
+	}
+	return filtered
+}
+
+func matchesTarget(accountName, target string) bool {
+	targets := strings.Split(target, ",")
+
+	for _, t := range targets {
+		if matched, _ := filepath.Match(t, accountName); matched {
+			return true
+		}
+	}
+	return false
+}

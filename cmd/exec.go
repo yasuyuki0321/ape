@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var target_account, command string
+var target, command string
 var skipPreview bool
 
 var execCmd = &cobra.Command{
@@ -26,6 +26,10 @@ func executeCommand(cmd *cobra.Command, args []string) {
 	if err != nil {
 		fmt.Println("Error loading accounts from config:", err)
 		return
+	}
+
+	if target != "" {
+		roleArns = utils.FilterAccounts(roleArns, target)
 	}
 
 	if !skipPreview {
@@ -63,4 +67,5 @@ func init() {
 
 	execCmd.Flags().StringVarP(&command, "command", "c", "", "Command to execute")
 	execCmd.Flags().BoolVarP(&skipPreview, "skip-preview", "y", false, "skip the preview and execute the command directly")
+	execCmd.Flags().StringVarP(&target, "target", "t", "", "Command target accounts")
 }
