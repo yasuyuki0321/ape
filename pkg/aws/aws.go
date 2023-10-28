@@ -5,7 +5,6 @@ import (
 	"context"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -33,16 +32,27 @@ func ResetCredentials() {
 }
 
 func ExecuteAWSCLI(outputBuffer *bytes.Buffer, account utils.Account, command string) error {
-	cmd := strings.Fields(command)
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
+	utils.PrintHeader(outputBuffer, account, command)
+
+	execCmd := exec.Command("sh", "-c", command)
 
 	var out bytes.Buffer
+	var errOut bytes.Buffer
 	execCmd.Stdout = &out
+	execCmd.Stderr = &errOut
 
 	if err := execCmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if exitErr.ExitCode() == 1 {
+				outputBuffer.WriteString("\n")
+				return nil
+			}
+		}
+		outputBuffer.WriteString("Error: ")
+		outputBuffer.WriteString(errOut.String())
+		outputBuffer.WriteString("\n")
 		return err
 	}
-	utils.PrintHeader(outputBuffer, account, command)
 
 	outputBuffer.WriteString(out.String())
 	outputBuffer.WriteString("\n")
