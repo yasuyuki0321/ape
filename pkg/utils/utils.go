@@ -54,9 +54,9 @@ func DisplayPreview(accounts []Account, command string) bool {
 
 func LoadAccountsFromConfig() ([]Account, error) {
 	v := viper.New()
-	v.SetConfigName("config") // 設定ファイルの名前（拡張子なし）
-	v.AddConfigPath(".")      // 設定ファイルのディレクトリ
-	v.SetConfigType("yaml")   // 使用するファイル形式
+	v.SetConfigName(".config") // 設定ファイルの名前（拡張子なし）
+	v.AddConfigPath(".")       // 設定ファイルのディレクトリ
+	v.SetConfigType("yaml")    // 使用するファイル形式
 
 	if err := v.ReadInConfig(); err != nil {
 		return nil, err
