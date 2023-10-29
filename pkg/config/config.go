@@ -76,11 +76,19 @@ func RemoveAccount(configPath string, name string) error {
 		return err
 	}
 
+	exists := false
 	newAccounts := []Account{}
+
 	for _, acc := range cfg.Accounts {
-		if acc.Name != name {
-			newAccounts = append(newAccounts, acc)
+		if acc.Name == name {
+			exists = true
+			continue
 		}
+		newAccounts = append(newAccounts, acc)
+	}
+
+	if !exists {
+		return fmt.Errorf("account with name '%s' does not exist", name)
 	}
 
 	cfg.Accounts = newAccounts
