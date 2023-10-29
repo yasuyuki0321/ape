@@ -57,15 +57,30 @@ func AddAccount(configPath string, name, roleArn string) error {
 		return err
 	}
 
+	// アカウント名が既に存在するかを確認
+	for _, acc := range cfg.Accounts {
+		if acc.Name == name {
+			return fmt.Errorf("account name '%s' already exists", name)
+		}
+	}
+
+	// 接続テストを行う
+	testAccount := utils.Account{Name: name, RoleArn: roleArn}
+	if err := CheckAWSConnections([]utils.Account{testAccount}); err != nil {
+		return fmt.Errorf("failed to test connection for account %s with roleArn %s: %w", name, roleArn, err)
+	}
+
+	// roleの形式が正しいか確認
+	if !isValidRoleArn(roleArn) {
+		return fmt.Errorf("provided roleArn is not valid: %s", roleArn)
+	}
+
 	newAccount := Account{
 		Name:    name,
 		RoleArn: roleArn,
 	}
 
-	if !isValidRoleArn(roleArn) {
-		return fmt.Errorf("provided roleArn is not valid: %s", roleArn)
-	}
-
+	// 新しいアカウントの追加
 	cfg.Accounts = append(cfg.Accounts, newAccount)
 	return writeConfig(configPath, cfg)
 }
