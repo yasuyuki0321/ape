@@ -9,4 +9,4 @@ test:
 	go test -v ./... | $(COLORIZE_PASS) | $(COLORIZE_FAIL)
 
 build:
-	go build -o ase .
+	go build -o ape .
