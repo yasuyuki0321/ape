@@ -39,7 +39,7 @@ jobs:
           tar -czvf build/ape-${{ matrix.os }}.tar.gz -C build ape-${{ matrix.os }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}.tar.gz
           path: build/ape-${{ matrix.os }}.tar.gz
