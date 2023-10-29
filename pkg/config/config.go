@@ -5,11 +5,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/yasuyuki0321/ape/pkg/aws"
 	"github.com/yasuyuki0321/ape/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
+
+const roleArnPattern = `^arn:aws:iam::\d{12}:role/.+$`
 
 type Account struct {
 	Name    string `yaml:"name"`
@@ -43,6 +46,11 @@ func writeConfig(configPath string, cfg *Config) error {
 	return os.WriteFile(configPath, data, os.ModePerm)
 }
 
+func isValidRoleArn(roleArn string) bool {
+	matched, _ := regexp.MatchString(roleArnPattern, roleArn)
+	return matched
+}
+
 func AddAccount(configPath string, name, roleArn string) error {
 	cfg, err := readConfig(configPath)
 	if err != nil {
@@ -52,6 +60,10 @@ func AddAccount(configPath string, name, roleArn string) error {
 	newAccount := Account{
 		Name:    name,
 		RoleArn: roleArn,
+	}
+
+	if !isValidRoleArn(roleArn) {
+		return fmt.Errorf("provided roleArn is not valid: %s", roleArn)
 	}
 
 	cfg.Accounts = append(cfg.Accounts, newAccount)
