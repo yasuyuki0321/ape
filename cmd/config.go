@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/spf13/cobra"
 	"github.com/yasuyuki0321/ape/pkg/config"
@@ -62,15 +63,31 @@ func testConnection(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error loading accounts from config: %w", err)
 	}
 
-	fmt.Println(target)
-
 	if target != "all" {
 		roleArns = utils.FilterAccounts(roleArns, target)
 	}
 
-	fmt.Println(roleArns)
+	var wg sync.WaitGroup
+	errorsCh := make(chan error, len(roleArns))
 
-	return config.CheckAWSConnections(roleArns)
+	for _, roleArn := range roleArns {
+		wg.Add(1)
+		go func(roleArn utils.Account) {
+			defer wg.Done()
+			if err := config.CheckAWSConnections([]utils.Account{roleArn}); err != nil {
+				errorsCh <- err
+			}
+		}(roleArn)
+	}
+	wg.Wait()
+	close(errorsCh)
+
+	for err := range errorsCh {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func init() {
