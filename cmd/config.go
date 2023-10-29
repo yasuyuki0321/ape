@@ -1,34 +1,90 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/yasuyuki0321/ape/pkg/config"
+	"github.com/yasuyuki0321/ape/pkg/utils"
 )
+
+const configFile = ".config.yaml"
+
+var name, roleArn string
 
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "manage config.yaml file",
-	Run:   executeConfig,
 }
 
-func executeConfig(cmd *cobra.Command, args []string) {
-	configPath := filepath.Join(".config.yaml")
+var configListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all accounts",
+	Run: func(cmd *cobra.Command, args []string) {
+		config.ListAccounts(configFile)
+	},
+}
 
-	if configBytes, err := os.ReadFile(configPath); err == nil {
-		fmt.Println(string(configBytes))
-	} else {
-		fmt.Printf("Error reading config file: %v\n", err)
+var configAddCmd = &cobra.Command{
+	Use:   "add",
+	Short: "Add an account",
+	Run: func(cmd *cobra.Command, args []string) {
+		name, _ := cmd.Flags().GetString("name")
+		roleArn, _ := cmd.Flags().GetString("roleArn")
+
+		if err := config.AddAccount(configFile, name, roleArn); err != nil {
+			fmt.Printf("Error adding account: %s\n", err)
+		}
+	},
+}
+
+var configRemoveCmd = &cobra.Command{
+	Use:   "remove",
+	Short: "Remove an account",
+	Run: func(cmd *cobra.Command, args []string) {
+		name, _ := cmd.Flags().GetString("name")
+
+		if err := config.RemoveAccount(configFile, name); err != nil {
+			fmt.Printf("Error removing account: %s\n", err)
+		}
+	},
+}
+
+var testConnectionCmd = &cobra.Command{
+	Use:   "test",
+	Short: "Test connection to AWS accounts",
+	RunE:  testConnection,
+}
+
+func testConnection(cmd *cobra.Command, args []string) error {
+	roleArns, err := utils.LoadAccountsFromConfig()
+	if err != nil {
+		return fmt.Errorf("error loading accounts from config: %w", err)
 	}
+
+	fmt.Println(target)
+
+	if target != "all" {
+		roleArns = utils.FilterAccounts(roleArns, target)
+	}
+
+	fmt.Println(roleArns)
+
+	return config.CheckAWSConnections(roleArns)
 }
 
 func init() {
 	rootCmd.AddCommand(configCmd)
 
-	configCmd.PersistentFlags().String("list", "", "A help for foo")
+	configCmd.AddCommand(configListCmd, configAddCmd, configRemoveCmd, testConnectionCmd)
+
+	configAddCmd.Flags().StringVarP(&name, "name", "n", "", "Name of the account to be added")
+	configAddCmd.Flags().StringVarP(&roleArn, "roleArn", "r", "", "Role ARN of the account to be added")
+	configAddCmd.MarkFlagRequired("name")
+	configAddCmd.MarkFlagRequired("roleArn")
+
+	configRemoveCmd.Flags().StringVarP(&name, "name", "n", "", "Name of the account to be removed")
+	configRemoveCmd.MarkFlagRequired("name")
+
+	testConnectionCmd.Flags().StringVarP(&target, "target", "t", "all", "Command target accounts (default: all)")
 }
