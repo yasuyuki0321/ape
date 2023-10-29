@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/spf13/cobra"
@@ -65,6 +66,12 @@ func testConnection(cmd *cobra.Command, args []string) error {
 
 	if target != "all" {
 		roleArns = utils.FilterAccounts(roleArns, target)
+	}
+
+	if len(roleArns) == 0 {
+		fmt.Fprintf(os.Stderr, "Error: no accounts found for target: %s\n", target)
+		// cobraの仕様でエラーを返すとUsageの情報が表示されることを回避するためnilを返す
+		return nil
 	}
 
 	var wg sync.WaitGroup
