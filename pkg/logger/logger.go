@@ -12,7 +12,7 @@ import (
 var logger *slog.Logger
 
 func init() {
-	logFile, err := os.OpenFile(utils.GetHomePath("~/.psh_hisotry"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	logFile, err := os.OpenFile(utils.GetHomePath("~/.psh_history"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatalf("failed to open log file: %v", err)
 	}
