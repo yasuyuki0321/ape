@@ -5,43 +5,43 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/spf13/cobra"
 	"github.com/yasuyuki0321/ape/pkg/aws"
 	"github.com/yasuyuki0321/ape/pkg/utils"
-
-	"github.com/spf13/cobra"
 )
 
-var target, command string
-var skipPreview bool
+var (
+	target, command string
+	skipPreview     bool
+)
 
 var execCmd = &cobra.Command{
 	Use:   "exec",
-	Short: "execute aws command across multiple accounts",
-	Run:   executeCommand,
+	Short: "Execute AWS command across multiple accounts",
+	RunE:  executeCommand,
 }
 
-func executeCommand(cmd *cobra.Command, args []string) {
-
+func executeCommand(cmd *cobra.Command, args []string) error {
 	roleArns, err := utils.LoadAccountsFromConfig()
 	if err != nil {
-		fmt.Println("Error loading accounts from config:", err)
-		return
+		return fmt.Errorf("error loading accounts from config: %w", err)
 	}
 
 	if target != "" {
 		roleArns = utils.FilterAccounts(roleArns, target)
 	}
 
-	if !skipPreview {
-		if !utils.DisplayPreview(roleArns, command) {
-			fmt.Println("Operation aborted.")
-			return
-		}
+	if !skipPreview && !utils.DisplayPreview(roleArns, command) {
+		return fmt.Errorf("operation aborted")
 	}
 
-	ctx := context.TODO()
-	for _, roleArn := range roleArns {
+	return executeAWSCommands(roleArns)
+}
 
+func executeAWSCommands(roleArns []utils.Account) error {
+	ctx := context.TODO()
+
+	for _, roleArn := range roleArns {
 		var outputBuffer bytes.Buffer
 		creds, err := aws.AssumeRole(ctx, roleArn.RoleArn)
 		if err != nil {
@@ -55,17 +55,16 @@ func executeCommand(cmd *cobra.Command, args []string) {
 		}
 
 		fmt.Print(outputBuffer.String())
-
 		aws.ResetCredentials()
 	}
 
-	fmt.Println("finish")
+	return nil
 }
 
 func init() {
 	rootCmd.AddCommand(execCmd)
 
 	execCmd.Flags().StringVarP(&command, "command", "c", "", "Command to execute")
-	execCmd.Flags().BoolVarP(&skipPreview, "skip-preview", "y", false, "skip the preview and execute the command directly")
-	execCmd.Flags().StringVarP(&target, "target", "t", "", "Command target accounts")
+	execCmd.Flags().BoolVarP(&skipPreview, "skip-preview", "y", false, "Skip the preview and execute the command directly")
+	execCmd.Flags().StringVarP(&target, "target", "t", "all", "Command target accounts")
 }
