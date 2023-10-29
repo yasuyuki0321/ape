@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/spf13/cobra"
@@ -33,7 +34,8 @@ func executeCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	if !skipPreview && !utils.DisplayPreview(roleArns, command) {
-		return fmt.Errorf("operation aborted")
+		fmt.Fprintf(os.Stderr, "operation aborted\n")
+		return nil
 	}
 
 	return executeAWSCommands(roleArns)
