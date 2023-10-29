@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/spf13/cobra"
 	"github.com/yasuyuki0321/ape/pkg/aws"
@@ -40,24 +41,41 @@ func executeCommand(cmd *cobra.Command, args []string) error {
 
 func executeAWSCommands(roleArns []utils.Account) error {
 	ctx := context.TODO()
+	var wg sync.WaitGroup
+
+	errChan := make(chan error, len(roleArns))
 
 	for _, roleArn := range roleArns {
-		var outputBuffer bytes.Buffer
-		creds, err := aws.AssumeRole(ctx, roleArn.RoleArn)
-		if err != nil {
-			fmt.Printf("Failed to assume role %s: %s\n", roleArn, err)
-			continue
-		}
+		wg.Add(1)
 
-		aws.SetTempCredentials(creds)
-		if err := aws.ExecuteAWSCLI(&outputBuffer, roleArn, command); err != nil {
-			fmt.Println("Error executing AWS CLI:", err)
-		}
+		go func(roleArn utils.Account) { // goroutineを開始
+			defer wg.Done()
+			var outputBuffer bytes.Buffer
 
-		fmt.Print(outputBuffer.String())
-		aws.ResetCredentials()
+			creds, err := aws.AssumeRole(ctx, roleArn.RoleArn)
+			if err != nil {
+				errChan <- fmt.Errorf("Failed to assume role %s: %s", roleArn, err)
+				return
+			}
+
+			aws.SetTempCredentials(creds)
+			if err := aws.ExecuteAWSCLI(&outputBuffer, roleArn, command); err != nil {
+				errChan <- fmt.Errorf("Error executing AWS CLI for role %s: %s", roleArn, err)
+				return
+			}
+
+			fmt.Print(outputBuffer.String())
+			aws.ResetCredentials()
+		}(roleArn)
 	}
+	wg.Wait()
+	close(errChan)
 
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
