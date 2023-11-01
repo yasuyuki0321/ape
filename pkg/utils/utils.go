@@ -38,10 +38,14 @@ func PrintHeader(outputBuffer *bytes.Buffer, account Account, command string) {
 	outputBuffer.WriteString(fmt.Sprintln(strings.Repeat("-", 10)))
 }
 
+func GetAccountID(roleArn string) string {
+	return strings.Split(roleArn, ":")[4]
+}
+
 func DisplayPreview(accounts []Account, command string) bool {
 	fmt.Println("Accounts:")
 	for _, account := range accounts {
-		fmt.Printf("Account: %s(%s)\n", account.Name, strings.Split(account.RoleArn, ":")[4])
+		fmt.Printf("Account: %s(%s)\n", account.Name, GetAccountID(account.RoleArn))
 	}
 
 	fmt.Printf("\nCommand: %s\n", command)

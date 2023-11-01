@@ -149,9 +149,9 @@ func CheckAWSConnections(roleArns []utils.Account) error {
 		err = aws.ExecuteAWSCLI(&outputBuffer, roleArn, cmd)
 
 		if err != nil {
-			fmt.Printf("Account: %s - NG (Failed to execute AWS CLI: %s)\n", roleArn.Name, err)
+			fmt.Printf("Account: %s(%s) - NG (Failed to execute AWS CLI: %s)\n", roleArn.Name, utils.GetAccountID(roleArn.RoleArn), err)
 		} else {
-			fmt.Printf("Account: %s - OK\n", roleArn.Name)
+			fmt.Printf("Account: %s(%s) - OK\n", roleArn.Name, utils.GetAccountID(roleArn.RoleArn))
 		}
 
 		aws.ResetCredentials()
