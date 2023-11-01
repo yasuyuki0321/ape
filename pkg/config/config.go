@@ -23,8 +23,8 @@ type Config struct {
 	Accounts []Account `yaml:"accounts"`
 }
 
-func readConfig(configPath string) (*Config, error) {
-	file, err := os.ReadFile(configPath)
+func readConfig(configFile string) (*Config, error) {
+	file, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +37,13 @@ func readConfig(configPath string) (*Config, error) {
 	return &cfg, nil
 }
 
-func writeConfig(configPath string, cfg *Config) error {
+func writeConfig(configFile string, cfg *Config) error {
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(configPath, data, os.ModePerm)
+	return os.WriteFile(configFile, data, os.ModePerm)
 }
 
 func isValidRoleArn(roleArn string) bool {
@@ -51,8 +51,17 @@ func isValidRoleArn(roleArn string) bool {
 	return matched
 }
 
-func AddAccount(configPath string, name, roleArn string) error {
-	cfg, err := readConfig(configPath)
+func AddAccount(configFile string, name, roleArn string) error {
+
+	// configファイルがなければ作成
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		_, err = os.Create(configFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	cfg, err := readConfig(configFile)
 	if err != nil {
 		return err
 	}
@@ -82,11 +91,11 @@ func AddAccount(configPath string, name, roleArn string) error {
 
 	// 新しいアカウントの追加
 	cfg.Accounts = append(cfg.Accounts, newAccount)
-	return writeConfig(configPath, cfg)
+	return writeConfig(configFile, cfg)
 }
 
-func RemoveAccount(configPath string, name string) error {
-	cfg, err := readConfig(configPath)
+func RemoveAccount(configFile string, name string) error {
+	cfg, err := readConfig(configFile)
 	if err != nil {
 		return err
 	}
@@ -107,11 +116,11 @@ func RemoveAccount(configPath string, name string) error {
 	}
 
 	cfg.Accounts = newAccounts
-	return writeConfig(configPath, cfg)
+	return writeConfig(configFile, cfg)
 }
 
-func ListAccounts(configPath string) {
-	cfg, err := readConfig(configPath)
+func ListAccounts(configFile string) {
+	cfg, err := readConfig(configFile)
 	if err != nil {
 		fmt.Println("Error reading config:", err)
 		return
