@@ -19,7 +19,7 @@ var (
 
 var execCmd = &cobra.Command{
 	Use:   "exec",
-	Short: "Execute AWS command across multiple accounts",
+	Short: "Execute awscli command across multiple accounts",
 	RunE:  executeCommand,
 }
 
@@ -56,13 +56,13 @@ func executeAWSCommands(roleArns []utils.Account) error {
 
 			creds, err := aws.AssumeRole(ctx, roleArn.RoleArn)
 			if err != nil {
-				errChan <- fmt.Errorf("Failed to assume role %s: %s", roleArn, err)
+				errChan <- fmt.Errorf("failed to assume role %s: %s", roleArn, err)
 				return
 			}
 
 			aws.SetTempCredentials(creds)
 			if err := aws.ExecuteAWSCLI(&outputBuffer, roleArn, command); err != nil {
-				errChan <- fmt.Errorf("Error executing AWS CLI for role %s: %s", roleArn, err)
+				errChan <- fmt.Errorf("error executing AWS CLI for role %s: %s", roleArn, err)
 				return
 			}
 

@@ -16,7 +16,7 @@ var name, roleArn string
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "manage config.yaml file",
+	Short: "manage .config.yaml file",
 }
 
 var configListCmd = &cobra.Command{
