@@ -85,6 +85,7 @@ func init() {
 	rootCmd.AddCommand(execCmd)
 
 	execCmd.Flags().StringVarP(&command, "command", "c", "", "Command to execute")
+	execCmd.MarkFlagRequired("command")
 	execCmd.Flags().BoolVarP(&skipPreview, "skip-preview", "y", false, "Skip the preview and execute the command directly")
 	execCmd.Flags().StringVarP(&target, "target", "t", "all", "Command target accounts")
 }

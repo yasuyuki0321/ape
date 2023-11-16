@@ -103,12 +103,10 @@ func init() {
 	configCmd.AddCommand(configListCmd, configAddCmd, configRemoveCmd, testConnectionCmd)
 
 	configAddCmd.Flags().StringVarP(&name, "name", "n", "", "Name of the account to be added")
-	configAddCmd.Flags().StringVarP(&roleArn, "roleArn", "r", "", "Role ARN of the account to be added")
 	configAddCmd.MarkFlagRequired("name")
+	configAddCmd.Flags().StringVarP(&roleArn, "roleArn", "r", "", "Role ARN of the account to be added")
 	configAddCmd.MarkFlagRequired("roleArn")
-
 	configRemoveCmd.Flags().StringVarP(&name, "name", "n", "", "Name of the account to be removed")
 	configRemoveCmd.MarkFlagRequired("name")
-
 	testConnectionCmd.Flags().StringVarP(&target, "target", "t", "all", "Command target accounts (default: all)")
 }
