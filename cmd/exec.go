@@ -47,11 +47,19 @@ func executeAWSCommands(roleArns []utils.Account) error {
 
 	errChan := make(chan error, len(roleArns))
 
+	// セマフォの設定: 同時に実行したいgoroutineの数を決定
+	semaphore := make(chan struct{}, 5) // 例: 同時に10個のgoroutineを実行
+
 	for _, roleArn := range roleArns {
 		wg.Add(1)
 
-		go func(roleArn utils.Account) { // goroutineを開始
+		// セマフォを取得
+		semaphore <- struct{}{}
+
+		go func(roleArn utils.Account) {
 			defer wg.Done()
+			defer func() { <-semaphore }() // セマフォを解放
+
 			var outputBuffer bytes.Buffer
 
 			creds, err := aws.AssumeRole(ctx, roleArn.RoleArn)
@@ -70,6 +78,7 @@ func executeAWSCommands(roleArns []utils.Account) error {
 			aws.ResetCredentials()
 		}(roleArn)
 	}
+
 	wg.Wait()
 	close(errChan)
 
